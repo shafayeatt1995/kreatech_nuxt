@@ -1,8 +1,8 @@
-import { prisma } from '../../utils/prisma'
+import { prisma } from '@/utils/prisma'
 import {
   updateTodoSchema,
   validationErrorResponse,
-} from '../../utils/todo-validation'
+} from '@/utils/todo-validation'
 
 export default defineEventHandler(async (event) => {
   const id = Number(getRouterParam(event, 'id'))

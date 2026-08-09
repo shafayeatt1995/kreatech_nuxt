@@ -1,4 +1,4 @@
-import { getTodoById } from '../../utils/todos'
+import { getTodoById } from '@/utils/todos'
 
 export default defineEventHandler(async (event) => {
   const id = Number(getRouterParam(event, 'id'))

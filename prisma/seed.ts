@@ -64,15 +64,19 @@ async function main() {
   const existingCount = await prisma.todo.count();
 
   if (existingCount >= targetCount) {
-    console.log(`Skipping seed: ${existingCount} todos already exist in nuxt_todos.`);
+    console.log(
+      `Skipping seed: ${existingCount} todos already exist in nuxt_todos.`,
+    );
     await prisma.$disconnect();
     return;
   }
 
-  const todos = demoTitles.slice(0, targetCount - existingCount).map((title, index) => ({
-    title,
-    completed: index % 3 === 0,
-  }));
+  const todos = demoTitles
+    .slice(0, targetCount - existingCount)
+    .map((title, index) => ({
+      title,
+      completed: index % 3 === 0,
+    }));
 
   await prisma.todo.createMany({
     data: todos,

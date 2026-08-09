@@ -1,4 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { fileURLToPath } from 'node:url'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
@@ -17,5 +19,8 @@ export default defineNuxtConfig({
     externals: {
       inline: ['@prisma/client'],
     },
+  },
+  alias: {
+    '@': fileURLToPath(new URL('./server', import.meta.url)),
   },
 })

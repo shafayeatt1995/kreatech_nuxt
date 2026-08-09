@@ -9,6 +9,7 @@ import {
 } from 'lucide-vue-next'
 import DeleteConfirmModal from '~/components/todo/DeleteConfirmModal.vue'
 import TodoFormModal from '~/components/todo/TodoFormModal.vue'
+import TodoTableSkeleton from '~/components/todo/TodoTableSkeleton.vue'
 import type { PaginatedTodos, Todo } from '~/types/todo'
 import type { TodoFieldErrors } from '~/utils/todo-validation'
 
@@ -36,18 +37,27 @@ const router = useRouter()
 
 const page = computed(() => Math.max(1, Number(route.query.page) || 1))
 
-const { data: todosData, pending, error: fetchError, refresh } = await useAsyncData(
-  () => `todos-${page.value}`,
-  () => $fetch<PaginatedTodos>('/api/todos', {
+function fetchTodos(pageNum: number) {
+  return $fetch<PaginatedTodos>('/api/todos', {
     query: {
-      page: page.value,
+      page: pageNum,
       limit: PAGE_SIZE,
     },
-  }),
+  })
+}
+
+const { data: todosData, pending, error: fetchError } = await useAsyncData(
+  () => `todos-${page.value}`,
+  () => fetchTodos(page.value),
   {
     watch: [page],
+    lazy: true,
   },
 )
+
+async function reloadTodos(pageNum = page.value) {
+  todosData.value = await fetchTodos(pageNum)
+}
 
 const submitting = ref(false)
 const actionError = ref<string | null>(null)
@@ -108,7 +118,12 @@ async function handleFormSubmit(values: {
       })
       formOpen.value = false
       selectedTodo.value = null
-      await router.push({ path: '/todo', query: { page: 1 } })
+
+      if (page.value !== 1) {
+        await router.replace({ path: '/todo', query: { page: 1 } })
+      }
+
+      await reloadTodos(1)
       return
     }
 
@@ -119,7 +134,7 @@ async function handleFormSubmit(values: {
       })
       formOpen.value = false
       selectedTodo.value = null
-      await refresh()
+      await reloadTodos()
     }
   } catch (error) {
     const fieldErrors = extractFieldErrors(error)
@@ -156,10 +171,12 @@ async function handleDeleteConfirm() {
       : page.value
 
     if (nextPage > 1) {
-      await router.push({ path: '/todo', query: { page: nextPage } })
+      await router.replace({ path: '/todo', query: { page: nextPage } })
     } else {
-      await router.push({ path: '/todo' })
+      await router.replace({ path: '/todo' })
     }
+
+    await reloadTodos(nextPage)
   } catch {
     actionError.value = 'Failed to delete todo'
   } finally {
@@ -196,7 +213,12 @@ async function handleDeleteConfirm() {
       {{ error }}
     </p>
 
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+    <TodoTableSkeleton v-if="pending" />
+
+    <div
+      v-else
+      class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+    >
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -216,12 +238,7 @@ async function handleDeleteConfirm() {
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 bg-white">
-            <tr v-if="pending">
-              <td colspan="4" class="px-6 py-10 text-center text-sm text-gray-500">
-                Loading todos...
-              </td>
-            </tr>
-            <tr v-else-if="todos.length === 0">
+            <tr v-if="todos.length === 0">
               <td colspan="4" class="px-6 py-10 text-center text-sm text-gray-500">
                 No todos found. Create your first todo.
               </td>

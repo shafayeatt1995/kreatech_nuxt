@@ -1,5 +1,5 @@
 import { PrismaMariaDb } from '@prisma/adapter-mariadb'
-import { PrismaClient } from '../generated/prisma/client'
+import { PrismaClient } from '@/generated/prisma/client'
 import { getDatabasePoolConfig } from './database'
 
 const globalForPrisma = globalThis as unknown as {

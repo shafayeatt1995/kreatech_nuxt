@@ -1,4 +1,4 @@
-import { getTodos } from '../../utils/todos'
+import { getTodos } from '@/utils/todos'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
