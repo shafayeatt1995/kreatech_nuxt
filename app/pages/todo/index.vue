@@ -43,6 +43,7 @@ function fetchTodos(pageNum: number) {
       page: pageNum,
       limit: PAGE_SIZE,
     },
+    cache: 'no-store',
   })
 }
 
@@ -170,10 +171,12 @@ async function handleDeleteConfirm() {
       ? page.value - 1
       : page.value
 
-    if (nextPage > 1) {
-      await router.replace({ path: '/todo', query: { page: nextPage } })
-    } else {
-      await router.replace({ path: '/todo' })
+    if (nextPage !== page.value) {
+      await router.replace(
+        nextPage > 1
+          ? { path: '/todo', query: { page: nextPage } }
+          : { path: '/todo' },
+      )
     }
 
     await reloadTodos(nextPage)
