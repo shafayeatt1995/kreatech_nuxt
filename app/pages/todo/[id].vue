@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, Calendar, CheckCircle2, Circle } from 'lucide-vue-next'
+import { ArrowLeft, Calendar, CheckCircle2, Circle, Loader2 } from 'lucide-vue-next'
 import type { Todo } from '~/types/todo'
 
 const route = useRoute()
@@ -32,8 +32,9 @@ const { data: todo, pending, error } = await useAsyncData(
 
     <div
       v-if="pending"
-      class="rounded-xl border border-gray-200 bg-white p-8 text-center text-gray-500 shadow-sm"
+      class="flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white p-8 text-gray-500 shadow-sm"
     >
+      <Loader2 class="h-5 w-5 animate-spin" />
       Loading todo...
     </div>
 

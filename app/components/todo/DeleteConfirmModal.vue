@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AlertTriangle, X } from 'lucide-vue-next'
+import { AlertTriangle, Loader2, Trash2, X } from 'lucide-vue-next'
 import type { Todo } from '~/types/todo'
 
 defineProps<{
@@ -47,17 +47,27 @@ const emit = defineEmits<{
         <div class="flex justify-end gap-3">
           <button
             type="button"
-            class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            :disabled="submitting"
             @click="emit('close')"
           >
+            <X class="h-4 w-4" />
             Cancel
           </button>
           <button
             type="button"
             :disabled="submitting"
-            class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+            class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
             @click="emit('confirm')"
           >
+            <Loader2
+              v-if="submitting"
+              class="h-4 w-4 animate-spin"
+            />
+            <Trash2
+              v-else
+              class="h-4 w-4"
+            />
             {{ submitting ? 'Deleting...' : 'Delete' }}
           </button>
         </div>

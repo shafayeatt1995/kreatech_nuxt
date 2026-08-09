@@ -3,6 +3,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
+  Loader2,
   Pencil,
   Plus,
   Trash2,
@@ -56,9 +57,19 @@ const { data: todosData, pending, error: fetchError } = await useAsyncData(
   },
 )
 
+const refreshing = ref(false)
+
 async function reloadTodos(pageNum = page.value) {
-  todosData.value = await fetchTodos(pageNum)
+  refreshing.value = true
+
+  try {
+    todosData.value = await fetchTodos(pageNum)
+  } finally {
+    refreshing.value = false
+  }
 }
+
+const isLoading = computed(() => pending.value || refreshing.value)
 
 const submitting = ref(false)
 const actionError = ref<string | null>(null)
@@ -201,10 +212,18 @@ async function handleDeleteConfirm() {
       </div>
       <button
         type="button"
-        class="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+        class="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-60"
+        :disabled="submitting"
         @click="openCreateModal"
       >
-        <Plus class="h-4 w-4" />
+        <Loader2
+          v-if="submitting"
+          class="h-4 w-4 animate-spin"
+        />
+        <Plus
+          v-else
+          class="h-4 w-4"
+        />
         Create Todo
       </button>
     </div>
@@ -216,7 +235,7 @@ async function handleDeleteConfirm() {
       {{ error }}
     </p>
 
-    <TodoTableSkeleton v-if="pending" />
+    <TodoTableSkeleton v-if="isLoading" />
 
     <div
       v-else
@@ -308,7 +327,14 @@ async function handleDeleteConfirm() {
             :to="pagination.page - 1 > 1 ? { path: '/todo', query: { page: pagination.page - 1 } } : '/todo'"
             class="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
           >
-            <ChevronLeft class="h-4 w-4" />
+            <Loader2
+              v-if="isLoading"
+              class="h-4 w-4 animate-spin"
+            />
+            <ChevronLeft
+              v-else
+              class="h-4 w-4"
+            />
             Previous
           </NuxtLink>
           <span
@@ -325,7 +351,14 @@ async function handleDeleteConfirm() {
             class="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
           >
             Next
-            <ChevronRight class="h-4 w-4" />
+            <Loader2
+              v-if="isLoading"
+              class="h-4 w-4 animate-spin"
+            />
+            <ChevronRight
+              v-else
+              class="h-4 w-4"
+            />
           </NuxtLink>
           <span
             v-else

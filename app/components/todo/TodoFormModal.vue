@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { X } from 'lucide-vue-next'
+import { Loader2, Plus, Save, X } from 'lucide-vue-next'
 import type { Todo } from '~/types/todo'
 import {
   createTodoFormSchema,
@@ -139,16 +139,30 @@ function clearCompletedError() {
         <div class="flex justify-end gap-3 pt-2">
           <button
             type="button"
-            class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            :disabled="submitting"
             @click="emit('close')"
           >
+            <X class="h-4 w-4" />
             Cancel
           </button>
           <button
             type="submit"
             :disabled="submitting"
-            class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+            class="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
           >
+            <Loader2
+              v-if="submitting"
+              class="h-4 w-4 animate-spin"
+            />
+            <Plus
+              v-else-if="mode === 'create'"
+              class="h-4 w-4"
+            />
+            <Save
+              v-else
+              class="h-4 w-4"
+            />
             {{ submitting ? 'Saving...' : mode === 'create' ? 'Create' : 'Update' }}
           </button>
         </div>
