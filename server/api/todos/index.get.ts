@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 503,
         statusMessage:
-          'Database connection failed. Verify DATABASE_URL, database permissions, and that the schema has been pushed.',
+          'Database connection failed. Verify DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, and DB_NAME, then run bun run db:push.',
       })
     }
 

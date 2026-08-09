@@ -1,20 +1,28 @@
-export function getDatabasePoolConfig() {
-  const databaseUrl = process.env.DATABASE_URL
+function getRequiredEnv(name: string): string {
+  const value = process.env[name]
 
-  if (!databaseUrl) {
-    throw new Error('DATABASE_URL is not set')
+  if (!value) {
+    throw new Error(`${name} is not set`)
   }
 
-  const url = new URL(databaseUrl)
+  return value
+}
 
+export function getDatabasePoolConfig() {
   return {
-    host: url.hostname,
-    port: url.port ? Number(url.port) : 3306,
-    user: decodeURIComponent(url.username),
-    password: decodeURIComponent(url.password),
-    database: url.pathname.replace(/^\//, ''),
+    host: getRequiredEnv('DB_HOST'),
+    port: Number(getRequiredEnv('DB_PORT')),
+    user: getRequiredEnv('DB_USER'),
+    password: getRequiredEnv('DB_PASSWORD'),
+    database: getRequiredEnv('DB_NAME'),
     connectionLimit: 5,
     connectTimeout: 15_000,
     acquireTimeout: 15_000,
   }
+}
+
+export function getDatabaseUrl() {
+  const { host, port, user, password, database } = getDatabasePoolConfig()
+
+  return `mysql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${database}`
 }
