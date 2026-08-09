@@ -1,17 +1,22 @@
 import { prisma } from '../../utils/prisma'
+import {
+  createTodoSchema,
+  validationErrorResponse,
+} from '../../utils/todo-validation'
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody<{ title?: string }>(event)
-  const title = typeof body?.title === 'string' ? body.title.trim() : ''
+  const body = await readBody(event)
+  const parsed = createTodoSchema.safeParse(body)
 
-  if (!title) {
+  if (!parsed.success) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Title is required',
+      statusMessage: 'Validation failed',
+      data: validationErrorResponse(parsed.error),
     })
   }
 
   return prisma.todo.create({
-    data: { title },
+    data: { title: parsed.data.title },
   })
 })

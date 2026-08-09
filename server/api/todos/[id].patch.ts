@@ -1,4 +1,8 @@
 import { prisma } from '../../utils/prisma'
+import {
+  updateTodoSchema,
+  validationErrorResponse,
+} from '../../utils/todo-validation'
 
 export default defineEventHandler(async (event) => {
   const id = Number(getRouterParam(event, 'id'))
@@ -6,39 +10,29 @@ export default defineEventHandler(async (event) => {
   if (Number.isNaN(id)) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Invalid todo id',
+      statusMessage: 'Validation failed',
+      data: {
+        error: 'Validation failed',
+        fieldErrors: { title: 'Invalid todo id' },
+      },
     })
   }
 
-  const body = await readBody<{ title?: string; completed?: boolean }>(event)
-  const data: { title?: string; completed?: boolean } = {}
+  const body = await readBody(event)
+  const parsed = updateTodoSchema.safeParse(body)
 
-  if (typeof body?.title === 'string') {
-    const title = body.title.trim()
-    if (!title) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: 'Title is required',
-      })
-    }
-    data.title = title
-  }
-
-  if (typeof body?.completed === 'boolean') {
-    data.completed = body.completed
-  }
-
-  if (Object.keys(data).length === 0) {
+  if (!parsed.success) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'No valid fields to update',
+      statusMessage: 'Validation failed',
+      data: validationErrorResponse(parsed.error),
     })
   }
 
   try {
     return await prisma.todo.update({
       where: { id },
-      data,
+      data: parsed.data,
     })
   } catch {
     throw createError({

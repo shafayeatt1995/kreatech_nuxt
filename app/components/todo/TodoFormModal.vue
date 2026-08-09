@@ -1,21 +1,28 @@
 <script setup lang="ts">
 import { X } from 'lucide-vue-next'
 import type { Todo } from '~/types/todo'
+import {
+  createTodoFormSchema,
+  editTodoFormSchema,
+  formatZodErrors,
+  type TodoFieldErrors,
+} from '~/utils/todo-validation'
 
 const props = defineProps<{
   open: boolean
   mode: 'create' | 'edit'
   todo: Todo | null
   submitting: boolean
+  onSubmit: (values: { title: string; completed: boolean }) => Promise<TodoFieldErrors | void>
 }>()
 
 const emit = defineEmits<{
   close: []
-  submit: [values: { title: string; completed: boolean }]
 }>()
 
 const title = ref('')
 const completed = ref(false)
+const fieldErrors = ref<TodoFieldErrors>({})
 
 watch(
   () => [props.open, props.todo] as const,
@@ -23,18 +30,42 @@ watch(
     if (open) {
       title.value = todo?.title ?? ''
       completed.value = todo?.completed ?? false
+      fieldErrors.value = {}
     }
   },
   { immediate: true },
 )
 
-function handleSubmit() {
-  const trimmedTitle = title.value.trim()
-  if (!trimmedTitle) {
+async function handleSubmit() {
+  const schema = props.mode === 'create' ? createTodoFormSchema : editTodoFormSchema
+  const parsed = schema.safeParse({
+    title: title.value,
+    completed: completed.value,
+  })
+
+  if (!parsed.success) {
+    fieldErrors.value = formatZodErrors(parsed.error)
     return
   }
 
-  emit('submit', { title: trimmedTitle, completed: completed.value })
+  fieldErrors.value = {}
+  const serverErrors = await props.onSubmit(parsed.data)
+
+  if (serverErrors) {
+    fieldErrors.value = serverErrors
+  }
+}
+
+function clearTitleError() {
+  if (fieldErrors.value.title) {
+    fieldErrors.value = { ...fieldErrors.value, title: undefined }
+  }
+}
+
+function clearCompletedError() {
+  if (fieldErrors.value.completed) {
+    fieldErrors.value = { ...fieldErrors.value, completed: undefined }
+  }
 }
 </script>
 
@@ -71,22 +102,39 @@ function handleSubmit() {
             v-model="title"
             type="text"
             placeholder="Enter todo title"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-gray-500"
+            class="w-full rounded-lg border px-3 py-2 outline-none focus:border-gray-500"
+            :class="fieldErrors.title ? 'border-red-500' : 'border-gray-300'"
             autofocus
+            :aria-invalid="Boolean(fieldErrors.title)"
+            :aria-describedby="fieldErrors.title ? 'todo-title-error' : undefined"
+            @input="clearTitleError"
           >
+          <p
+            v-if="fieldErrors.title"
+            id="todo-title-error"
+            class="mt-1 text-sm text-red-600"
+          >
+            {{ fieldErrors.title }}
+          </p>
         </div>
 
-        <label
-          v-if="mode === 'edit'"
-          class="flex items-center gap-2 text-sm text-gray-700"
-        >
-          <input
-            v-model="completed"
-            type="checkbox"
-            class="h-4 w-4 rounded border-gray-300"
+        <div v-if="mode === 'edit'">
+          <label class="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              v-model="completed"
+              type="checkbox"
+              class="h-4 w-4 rounded border-gray-300"
+              @change="clearCompletedError"
+            >
+            Mark as completed
+          </label>
+          <p
+            v-if="fieldErrors.completed"
+            class="mt-1 text-sm text-red-600"
           >
-          Mark as completed
-        </label>
+            {{ fieldErrors.completed }}
+          </p>
+        </div>
 
         <div class="flex justify-end gap-3 pt-2">
           <button

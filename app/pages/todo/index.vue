@@ -10,6 +10,24 @@ import {
 import DeleteConfirmModal from '~/components/todo/DeleteConfirmModal.vue'
 import TodoFormModal from '~/components/todo/TodoFormModal.vue'
 import type { PaginatedTodos, Todo } from '~/types/todo'
+import type { TodoFieldErrors } from '~/utils/todo-validation'
+
+function extractFieldErrors(error: unknown): TodoFieldErrors | undefined {
+  if (
+    error
+    && typeof error === 'object'
+    && 'data' in error
+    && error.data
+    && typeof error.data === 'object'
+    && 'fieldErrors' in error.data
+    && error.data.fieldErrors
+    && typeof error.data.fieldErrors === 'object'
+  ) {
+    return error.data.fieldErrors as TodoFieldErrors
+  }
+
+  return undefined
+}
 
 const PAGE_SIZE = 10
 
@@ -75,7 +93,10 @@ function openDeleteModal(todo: Todo) {
   deleteOpen.value = true
 }
 
-async function handleFormSubmit(values: { title: string; completed: boolean }) {
+async function handleFormSubmit(values: {
+  title: string
+  completed: boolean
+}): Promise<TodoFieldErrors | void> {
   submitting.value = true
   actionError.value = null
 
@@ -88,7 +109,10 @@ async function handleFormSubmit(values: { title: string; completed: boolean }) {
       formOpen.value = false
       selectedTodo.value = null
       await router.push({ path: '/todo', query: { page: 1 } })
-    } else if (selectedTodo.value) {
+      return
+    }
+
+    if (selectedTodo.value) {
       await $fetch(`/api/todos/${selectedTodo.value.id}`, {
         method: 'PATCH',
         body: values,
@@ -97,7 +121,12 @@ async function handleFormSubmit(values: { title: string; completed: boolean }) {
       selectedTodo.value = null
       await refresh()
     }
-  } catch {
+  } catch (error) {
+    const fieldErrors = extractFieldErrors(error)
+    if (fieldErrors) {
+      return fieldErrors
+    }
+
     actionError.value = formMode.value === 'create'
       ? 'Failed to create todo'
       : 'Failed to update todo'
@@ -294,8 +323,8 @@ async function handleDeleteConfirm() {
       :mode="formMode"
       :todo="selectedTodo"
       :submitting="submitting"
+      :on-submit="handleFormSubmit"
       @close="formOpen = false; selectedTodo = null"
-      @submit="handleFormSubmit"
     />
 
     <DeleteConfirmModal

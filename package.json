@@ -9,7 +9,8 @@
     "preview": "nuxt preview",
     "postinstall": "prisma generate && nuxt prepare",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "db:seed": "bun prisma/seed.ts"
   },
   "dependencies": {
     "@nuxt/fonts": "0.14.0",
@@ -20,7 +21,8 @@
     "mariadb": "^3.5.3",
     "nuxt": "^4.5.2",
     "vue": "^3.5.40",
-    "vue-router": "^5.2.0"
+    "vue-router": "^5.2.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "dotenv": "^17.4.2",
